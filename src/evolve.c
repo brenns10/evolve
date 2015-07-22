@@ -15,11 +15,19 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+#include <limits.h>
+#include <time.h>
 
-#define NUM_CHARACTERS 26
-char characters[NUM_CHARACTERS] = {
-  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
-  'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+#define BEAM 100
+#define MUTATIONS 50
+#define CROSS (BEAM*(BEAM-1)/2)
+#define NWORDS (BEAM + MUTATIONS*BEAM + CROSS)
+
+char random_character()
+{
+  return (char) (rand() % (CHAR_MAX - CHAR_MIN) + CHAR_MIN);
 }
 
 int fitness(char *candidate, char *target)
@@ -37,13 +45,13 @@ int fitness(char *candidate, char *target)
 
 void mutate(char *result, char *string, size_t length)
 {
-  char newchar = characters[rand() % NUM_CHARACTERS];
+  char newchar = random_character();
   size_t index = rand() % length;
   strncpy(result, string, length + 1);
-  string[index] = newchar;
+  result[index] = newchar;
 }
 
-void cross(char *result, char *c1, char *c2, size_t length)
+void cross(char *result, char *c1, char *c2)
 {
   while (*c1 != '\0' && *c2 != '\0') {
     if (rand() % 2 == 0) {
@@ -56,27 +64,35 @@ void cross(char *result, char *c1, char *c2, size_t length)
   *result = '\0';
 }
 
-#define BEAM 10
-#define MUTATIONS 5
-#define CROSS (BEAM*(BEAM-1))
-#define NWORDS (BEAM + MUTATIONS*BEAM + CROSS)
-void search(char *target)
+const char *get_source(size_t index)
+{
+  if (index < BEAM) {
+    return "parents";
+  } else if (index < BEAM + MUTATIONS*BEAM) {
+    return "mutation";
+  } else {
+    return "cross";
+  }
+}
+
+int search(char *target)
 {
   size_t i, j, k, length = strlen(target);
   char words[NWORDS][length+1];
   char buffer[length+1];
   int fitnesses[NWORDS];
+  int fit, generation = 0;;
 
   // initialize the initial beam of words
   for (i = 0; i < BEAM; i++) {
     for (j = 0; j < length; j++) {
-      words[i][j] = characters[rand() % NUM_CHARACTERS];
+      words[i][j] = random_character();
     }
     words[i][j] = '\0';
   }
 
   // iterate until the string converges
-  while (strcmp(words[0], target) == 0) {
+  while (strcmp(words[0], target) != 0) {
     k = BEAM;
 
     // first, mutate the strings in the beam a few times
@@ -88,8 +104,8 @@ void search(char *target)
 
     // then, cross the strings from the beam
     for (i = 0; i < BEAM; i++) {
-      for (j = i; j < BEAM; j++) {
-        cross(words[k++], words[i], words[j], length);
+      for (j = i+1; j < BEAM; j++) {
+        cross(words[k++], words[i], words[j]);
       }
     }
 
@@ -107,23 +123,29 @@ void search(char *target)
           k = j;
         }
       }
+      if (i == k) {
+        continue;
+      }
       // swap
-      strncpy(buffer, fitnesses[i], length+1);
-      strncpy(fitnesses[i], fitnesses[k], length+1);
-      strncpy(fitnesses[k], buffer, length+1);
+      strncpy(buffer, words[i], length+1);
+      fit = fitnesses[i];
+      strncpy(words[i], words[k], length+1);
+      fitnesses[i] = fitnesses[k];
+      strncpy(words[k], buffer, length+1);
+      fitnesses[k] = fit;
     }
-
-    printf("=> \"%s\" fitness=%d\n", words[0], fitnesses[0]);
+    generation++;
   }
+  return generation;
 }
 
 int main(int argc, char *argv[])
 {
   if (argc != 2) {
-    fprintf("usage: %s string_to_search_for\n", argv[0]);
+    fprintf(stderr, "usage: %s string_to_search_for\n", argv[0]);
     return EXIT_FAILURE;
   }
-  search(argv[1]);
+  srand(time(NULL));
+  printf("%d\n", search(argv[1]));
   return EXIT_SUCCESS;
 }
-
