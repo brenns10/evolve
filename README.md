@@ -13,3 +13,7 @@ You can build it by running `make` (it should build on Linux with no fuss).  Run
 it with `bin/release/evolve [string-to-search-for]`.  It'll output the fitness
 of each generation's top individual as it goes.  It may take a long time for
 long strings (or segfault if you make the string big enough).
+
+The idea for this code isn't original -- I saw the idea mentioned on
+StackOverflow, and apparently the SO user got the idea for it from something
+called Rosetta Code.  It's a fun coding exercise for me.
