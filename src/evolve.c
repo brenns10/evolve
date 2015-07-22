@@ -25,11 +25,20 @@
 #define CROSS (BEAM*(BEAM-1)/2)
 #define NWORDS (BEAM + MUTATIONS*BEAM + CROSS)
 
+/*
+   Get a random character.  By changing this, you can make it do only
+   alphabetical characters or something.  That would make the search more
+   efficient.
+ */
 char random_character()
 {
   return (char) (rand() % (CHAR_MAX - CHAR_MIN) + CHAR_MIN);
 }
 
+/*
+  Evaluate the fitness of a string by comparing it to the target.  The fitness
+  is defined as the number of characters it has in common with the target.
+ */
 int fitness(char *candidate, char *target)
 {
   int fit = 0;
@@ -43,6 +52,9 @@ int fitness(char *candidate, char *target)
   return fit;
 }
 
+/*
+  "Mutate" a string, by randomly changing one of its characters.
+ */
 void mutate(char *result, char *string, size_t length)
 {
   char newchar = random_character();
@@ -51,6 +63,9 @@ void mutate(char *result, char *string, size_t length)
   result[index] = newchar;
 }
 
+/*
+  "Cross" two strings, so that the new one inherits qualities of both.
+ */
 void cross(char *result, char *c1, char *c2)
 {
   while (*c1 != '\0' && *c2 != '\0') {
@@ -64,17 +79,13 @@ void cross(char *result, char *c1, char *c2)
   *result = '\0';
 }
 
-const char *get_source(size_t index)
-{
-  if (index < BEAM) {
-    return "parents";
-  } else if (index < BEAM + MUTATIONS*BEAM) {
-    return "mutation";
-  } else {
-    return "cross";
-  }
-}
-
+/*
+  Search for a target string by initializing a population of random strings, and
+  iterating through "generations" of new ones.  New generations are created by
+  mutating and crossing over the parents of the generation.  The parents of the
+  next generation are determined by choosing the most "fit" individuals from the
+  current population.
+ */
 int search(char *target)
 {
   size_t i, j, k, length = strlen(target);
