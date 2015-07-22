@@ -146,6 +146,7 @@ int search(char *target)
       fitnesses[k] = fit;
     }
     generation++;
+    printf("generation %d: fitness %d\n", generation, fitnesses[0]);
   }
   return generation;
 }
